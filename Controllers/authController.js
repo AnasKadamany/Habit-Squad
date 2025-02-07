@@ -1,7 +1,6 @@
-const pool = require("../db"); // Reuse database connection
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-
+import pool from "../db.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 const register = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -66,14 +65,23 @@ const login = async (req, res) => {
     }
 
     // 🔹 Generate JWT token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // 🔹 Send response
     return res.status(200).json({
       message: "Login successful",
-      token,
       user: { id: user.id, email: user.email },
     });
   } catch (error) {
@@ -82,5 +90,4 @@ const login = async (req, res) => {
   }
 };
 
-// Exporting function correctly for Node.js
-module.exports = { login, register };
+export { register, login };
